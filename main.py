@@ -16,3 +16,12 @@ r'C:\Users\YaroslavSysoiev\PycharmProjects\PythonProject\netflix_titles.csv'
 )
 
 df.show(2)
+df.printSchema()
+
+jdbc_url = "jdbc:postresql://localhost:5432/sparkdb"
+
+connection_properties = {
+    "user": "sparkuser",
+    "password": "mypassword",
+    "driver": "org.postresql.Driver"
+}
