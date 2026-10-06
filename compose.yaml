@@ -2,25 +2,24 @@ services:
   postgres:
     image: postgres:18
 
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-
-    ports:
-      - "5432:5432"
+    env_file:
+      - .env
 
     volumes:
       - postgres_data:/var/lib/postgresql
 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
 
 
-  spark:
+  bronze:
     build:
       context: .
       dockerfile: Dockerfile
@@ -33,12 +32,13 @@ services:
 
     volumes:
       - .:/app
+      - spark_ivy:/tmp/.ivy2
+
+    env_file:
+      - .env
 
     environment:
       POSTGRES_HOST: postgres
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
     command:
       - /opt/spark/bin/spark-submit
@@ -46,10 +46,13 @@ services:
       - local[*]
       - --conf
       - spark.jars.ivy=/tmp/.ivy2
+      - --repositories
+      - https://repo.maven.apache.org/maven2
       - --packages
       - org.postgresql:postgresql:42.7.8
-      - /app/main.py
+      - /app/bronze/main.py
 
 
 volumes:
   postgres_data:
+  spark_ivy:
