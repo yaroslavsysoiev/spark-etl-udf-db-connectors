@@ -18,7 +18,6 @@ services:
       timeout: 5s
       retries: 10
 
-
   bronze:
     build:
       context: .
@@ -52,6 +51,38 @@ services:
       - org.postgresql:postgresql:42.7.8
       - /app/bronze/main.py
 
+  silver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    working_dir: /app
+
+    volumes:
+      - .:/app
+      - spark_ivy:/tmp/.ivy2
+
+    env_file:
+      - .env
+
+    environment:
+      POSTGRES_HOST: postgres
+
+    command:
+      - /opt/spark/bin/spark-submit
+      - --master
+      - local[*]
+      - --conf
+      - spark.jars.ivy=/tmp/.ivy2
+      - --repositories
+      - https://repo.maven.apache.org/maven2
+      - --packages
+      - org.postgresql:postgresql:42.7.8
+      - /app/silver/main.py
 
 volumes:
   postgres_data:
