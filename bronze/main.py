@@ -1,55 +1,35 @@
-import os
-
-from pyspark.sql import SparkSession
-from UDF import country_to_iso
-
-spark = (
-    SparkSession.builder
-    .appName("NetflixETL")
-    .getOrCreate()
+from spark_session import create_spark_session
+from data_io import (
+    read_csv,
+    write_to_postgres,
+    read_from_postgres,
 )
 
-df = (
-    spark.read
-    .option("header", True)
-    .option("inferSchema", True)
-    .csv("/app/static/netflix_titles.csv")
-)
 
-print("======================================== ORIGINAL DATA ========================================")
-df.show(5)
-df.printSchema()
+def main():
+    spark = create_spark_session()
 
-df = df.withColumn("country_code", country_to_iso("country"))
+    df = read_csv(spark)
 
-jdbc_url = (
-    f"jdbc:postgresql://"
-    f"{os.environ['POSTGRES_HOST']}:5432/"
-    f"{os.environ['POSTGRES_DB']}"
-)
+    print("========== ORIGINAL DATA ==========")
+    df.show(5)
+    df.printSchema()
 
-connection_properties = {
-    "user": os.environ["POSTGRES_USER"],
-    "password": os.environ["POSTGRES_PASSWORD"],
-    "driver": "org.postgresql.Driver",
-}
 
-df.write.jdbc(
-    url=jdbc_url,
-    table="public.netflix_titles",
-    mode="overwrite",
-    properties=connection_properties,
-)
+    write_to_postgres(df)
 
-print("Saved to PostgreSQL")
+    print("Saved to PostgreSQL")
 
-# Verify by reading it back
-db_df = spark.read.jdbc(
-    url=jdbc_url,
-    table="public.netflix_titles",
-    properties=connection_properties,
-)
+    db_df = read_from_postgres(spark)
 
-df.select("title", "country", "listed_in", "country_code").show()
+    db_df.select(
+        "title",
+        "country",
+        "listed_in",
+    ).show(20, truncate=False)
 
-spark.stop()
+    spark.stop()
+
+
+if __name__ == "__main__":
+    main()
