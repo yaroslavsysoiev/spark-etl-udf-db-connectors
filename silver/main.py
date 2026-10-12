@@ -59,31 +59,23 @@ def main():
         )
     )
 
-    print("========== DATA FROM POSTGRES ==========")
+    df.printSchema()
+    df.select("show_id", "title", "type", "country", "description").show(25)
 
-    df.select(
-        "title",
-        "country",
-        "listed_in",
-    ).show(10, truncate=False)
+    print(f"======================================================================================================== \n"
+          " DATA FROM POSTGRES ABOVE \n"
+          "===========================================================================================================")
 
-    silver_df = (
-        df
-        .withColumn(
-            "country_code",
-            country_to_iso("country")
-        )
-    )
+    silver_df = df.dropna()
 
-    print("========== SILVER DATA ==========")
-
-    silver_df.select(
-        "title",
-        "country",
+    silver_df = silver_df.withColumn(
         "country_code",
-        "listed_in",
-    ).show(20, truncate=False)
+        country_to_iso("country")
+    ).select("show_id", "title", "country", "country_code").show(25)
 
+    print(f"======================================================================================================== \n"
+          " ^^^ SILVER DATA ^^^ \n"
+          "===========================================================================================================")
     silver_df.printSchema()
 
     spark.stop()
