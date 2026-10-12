@@ -71,9 +71,9 @@ def main():
     silver_df = silver_df.withColumn(
         "country_code",
         country_to_iso("country")
-    ).select("show_id", "title", "country", "country_code")
+    )
 
-    silver_df.show(25)
+    silver_df.select("show_id", "title", "country", "country_code").show(25)
 
     print(f"======================================================================================================== \n"
           " ^^^ SILVER DATA ^^^ \n"
