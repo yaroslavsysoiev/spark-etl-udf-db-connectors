@@ -14,9 +14,10 @@ services:
           "CMD-SHELL",
           "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
         ]
-      interval: 5s
+      interval: 2s
       timeout: 5s
-      retries: 10
+      retries: 15
+      start_period: 10s
 
   bronze:
     build:
@@ -31,7 +32,6 @@ services:
 
     volumes:
       - .:/app
-      - spark_ivy:/tmp/.ivy2
 
     env_file:
       - .env
@@ -39,16 +39,12 @@ services:
     environment:
       POSTGRES_HOST: postgres
 
+    restart: "no"
+
     command:
       - /opt/spark/bin/spark-submit
       - --master
       - local[*]
-      - --conf
-      - spark.jars.ivy=/tmp/.ivy2
-      - --repositories
-      - https://repo.maven.apache.org/maven2
-      - --packages
-      - org.postgresql:postgresql:42.7.8
       - /app/bronze/main.py
 
   silver:
@@ -59,12 +55,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      bronze:
+        condition: service_completed_successfully
 
     working_dir: /app
 
     volumes:
       - .:/app
-      - spark_ivy:/tmp/.ivy2
+      - hf_cache:/root/.cache/huggingface
 
     env_file:
       - .env
@@ -72,18 +70,14 @@ services:
     environment:
       POSTGRES_HOST: postgres
 
+    restart: "no"
+
     command:
       - /opt/spark/bin/spark-submit
       - --master
       - local[*]
-      - --conf
-      - spark.jars.ivy=/tmp/.ivy2
-      - --repositories
-      - https://repo.maven.apache.org/maven2
-      - --packages
-      - org.postgresql:postgresql:42.7.8
       - /app/silver/main.py
 
 volumes:
   postgres_data:
-  spark_ivy:
+  hf_cache:
