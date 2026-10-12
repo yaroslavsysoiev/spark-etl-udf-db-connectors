@@ -1,3 +1,6 @@
 pandas
 pyarrow
 pycountry
+sentence-transformers
+torch
+psycopg2-binary
