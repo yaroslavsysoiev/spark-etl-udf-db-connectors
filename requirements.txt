@@ -2,3 +2,4 @@ pandas
 pyarrow
 pycountry
 sentence-transformers
+torch
