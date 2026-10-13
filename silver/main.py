@@ -1,42 +1,18 @@
 import os
 
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import pandas_udf, to_json, col
+from pyspark.sql.types import ArrayType, FloatType
+
 import pandas as pd
 import pycountry
-
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import pandas_udf, udf, to_json, col
-from pyspark.sql.types import StringType, ArrayType, FloatType
-
 import psycopg2
 
 
-# My first UDF function using pandas_udf -------------------------------------------------------------------------------
-@pandas_udf(StringType())
-def country_to_iso(countries: pd.Series) -> pd.Series:
-    def convert(value):
-        if pd.isna(value):
-            return None
+from country_to_iso_udf import country_to_iso
 
-        result = []
-
-        for country_name in value.split(","):
-            country_name = country_name.strip()
-
-            try:
-                country = pycountry.countries.lookup(country_name)
-                result.append(country.alpha_2)
-
-            except LookupError:
-                result.append("UNKNOWN")
-
-        return ",".join(result)
-
-    return countries.apply(convert)
-
-
-# the second pandas_udf
-# Conclusion from using regular udf: I encountered OOM
-
+# the second pandas_udf -> to be moved to a different module
+#
 EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 _model = None
 
@@ -151,7 +127,6 @@ def main():
     )
 
     df.printSchema()
-    # df.select("show_id", "title", "type", "country", "description").show(25)
 
     print(f"======================================================================================================== \n"
           " DATA FROM POSTGRES ABOVE \n"
@@ -169,13 +144,10 @@ def main():
         embedding_udf("description")
     )
 
-    # silver_df.select("show_id", "title", "country", "country_code").show(25)
-    # silver_df.select("show_id", "title", "description", "embedding").show(25)
 
     print(f"======================================================================================================== \n"
           " ^^^ SILVER DATA ^^^ \n"
           "===========================================================================================================")
-    # silver_df.printSchema()
 
     # Saving embeddings to an intermediate table --------------------------------------------------------------------------
 

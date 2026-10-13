@@ -19,6 +19,7 @@ def country_to_iso(countries: pd.Series) -> pd.Series:
             try:
                 country = pycountry.countries.lookup(country_name)
                 result.append(country.alpha_2)
+
             except LookupError:
                 result.append("UNKNOWN")
 
