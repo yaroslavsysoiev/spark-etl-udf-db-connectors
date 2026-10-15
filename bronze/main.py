@@ -1,8 +1,8 @@
 from spark_session import create_spark_session
+
 from data_io import (
     read_csv,
-    write_to_postgres,
-    read_from_postgres,
+    write_to_parquet,
 )
 
 
@@ -16,20 +16,9 @@ def main():
     df.printSchema()
 
 
-    write_to_postgres(df)
+    write_to_parquet(df)
 
-    print("Saved to PostgreSQL")
-
-    db_df = read_from_postgres(spark)
-
-    db_df.select(
-        "title",
-        "country",
-        "listed_in",
-    ).show(20, truncate=False)
-    print("000000000000000000000000000000000000000000000000000000 \n"
-          "HERE IS WHAT WAS SAVED TO POSTGRESQL \n"
-          "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999")
+    print("DataFrame was successfully written to parquet")
 
     spark.stop()
 

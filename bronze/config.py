@@ -1,7 +1,7 @@
 import os
 
-CSV_PATH = "/app/static/netflix_titles.csv"
-TABLE_NAME = "public.netflix_titles"
+CSV_PATH = "/app/data/raw/netflix_titles.csv"
+TABLE_NAME = "/app/data/bronze/netflix_titles"
 
 jdbc_url = (
     f"jdbc:postgresql://"

@@ -7,6 +7,7 @@ from config import (
     connection_properties
 )
 
+
 def read_csv(spark: SparkSession) -> DataFrame:
     return (
         spark.read
@@ -15,13 +16,23 @@ def read_csv(spark: SparkSession) -> DataFrame:
         .csv(CSV_PATH)
     )
 
+
+def write_to_parquet(df: DataFrame) -> None:
+    (
+        df.write
+        .mode("overwrite")
+        .parquet(TABLE_NAME)
+    )
+
+
 def write_to_postgres(df: DataFrame) -> None:
     df.write.jdbc(
-        url = jdbc_url,
-        table = TABLE_NAME,
-        mode = "overwrite",
-        properties = connection_properties
+        url=jdbc_url,
+        table=TABLE_NAME,
+        mode="overwrite",
+        properties=connection_properties
     )
+
 
 def read_from_postgres(spark: SparkSession) -> DataFrame:
     return spark.read.jdbc(
