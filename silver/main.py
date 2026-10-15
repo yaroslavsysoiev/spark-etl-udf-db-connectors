@@ -110,11 +110,8 @@ def main():
     }
 
     df = (
-        spark.read
-        .jdbc(
-            url=jdbc_url,
-            table="public.netflix_titles",
-            properties=connection_properties,
+        spark.read.parquet(
+        "/app/data/bronze/netflix_titles"
         )
     )
 
