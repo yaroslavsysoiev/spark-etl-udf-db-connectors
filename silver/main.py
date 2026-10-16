@@ -1,7 +1,7 @@
 import os
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import pandas_udf, to_json, col
+from pyspark.sql.functions import pandas_udf, to_json, col, explode, split, trim
 from pyspark.sql.types import ArrayType, FloatType
 
 import pandas as pd
@@ -13,9 +13,9 @@ from country_to_iso_udf import country_to_iso
 
 EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
+
 @pandas_udf(ArrayType(FloatType()))
 def embedding_udf(texts: pd.Series) -> pd.Series:
-
     if not hasattr(embedding_udf, "_model"):
         from sentence_transformers import SentenceTransformer
 
@@ -57,32 +57,32 @@ def load_embeddings_to_pgvector():
         with conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    INSERT INTO public.netflix_titles_silver
-                    (
-                        show_id,
-                        title,
-                        country,
-                        country_code,
-                        description,
-                        embedding
-                    )
-                    SELECT DISTINCT ON (show_id)
-                        show_id,
-                        title,
-                        country,
-                        country_code,
-                        description,
-                        embedding_text::vector(384)
-                    FROM public.netflix_titles_silver_staging
+                            INSERT INTO public.netflix_titles_silver
+                            (show_id,
+                             title,
+                             country,
+                             country_code,
+                             description,
+                             embedding)
+                            SELECT DISTINCT
+                            ON (show_id)
+                                show_id,
+                                title,
+                                country,
+                                country_code,
+                                description,
+                                embedding_text::vector(384)
+                            FROM public.netflix_titles_silver_staging
 
-                    ON CONFLICT (show_id)
-                    DO UPDATE SET
-                        title = EXCLUDED.title,
-                        country = EXCLUDED.country,
-                        country_code = EXCLUDED.country_code,
-                        description = EXCLUDED.description,
-                        embedding = EXCLUDED.embedding;
-                """)
+                            ON CONFLICT (show_id)
+                                DO
+                            UPDATE SET
+                                title = EXCLUDED.title,
+                                country = EXCLUDED.country,
+                                country_code = EXCLUDED.country_code,
+                                description = EXCLUDED.description,
+                                embedding = EXCLUDED.embedding;
+                            """)
 
     finally:
         conn.close()
@@ -111,14 +111,14 @@ def main():
 
     df = (
         spark.read.parquet(
-        "/app/data/bronze/netflix_titles"
+            "/app/data/bronze/netflix_titles"
         )
     )
 
     df.printSchema()
 
     print(f"======================================================================================================== \n"
-          " DATA FROM POSTGRES ABOVE \n"
+          " DATA FROM PARQUET ABOVE \n"
           "===========================================================================================================")
 
     silver_df = df.dropna(subset=["country", "description"])
@@ -133,8 +133,40 @@ def main():
         embedding_udf("description")
     )
 
+    aggregated_df = (
+        silver_df
+        .withColumn(
+            "country_code", split(col("country_code"), ",")
+        )
+        .withColumn(
+            "country_code", explode(col("country_code")
+            )
+        )
+        .withColumn(
+            "country_code", trim(col("country_code")
+            )
+        )
+        .groupBy("country_code")
+        .count()
+        .orderBy(col("count"), ascending=False)
+    )
+
+    aggregated_df.show(100, truncate=False)
+
+    (
+        aggregated_df.write
+        .format("jdbc")
+        .option("url", jdbc_url)
+        .option("dbtable", "public.netflix_titles_aggregated_table")
+        .option("user", os.environ["POSTGRES_USER"])
+        .option("password", os.environ["POSTGRES_PASSWORD"])
+        .option("driver", "org.postgresql.Driver")
+        .mode("overwrite")
+        .save()
+    )
+
     print(f"======================================================================================================== \n"
-          " ^^^ SILVER DATA ^^^ \n"
+          " ^^^ SAVED AGGREGATED DATAFRAME ^^^ \n"
           "===========================================================================================================")
 
     # Saving embeddings to an intermediate table --------------------------------------------------------------------------
