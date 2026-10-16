@@ -70,6 +70,7 @@ services:
 
     environment:
       POSTGRES_HOST: postgres
+      PYTHONPATH: /app
 
     restart: "no"
 

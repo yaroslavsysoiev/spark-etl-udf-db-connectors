@@ -8,29 +8,29 @@ import pandas as pd
 import psycopg2
 
 from country_to_iso_udf import country_to_iso
-
+from support_embedding_udf import embedding_udf
 # the second pandas_udf -> to be moved to a different module -----------------------------------------------------------
 
 EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 
-@pandas_udf(ArrayType(FloatType()))
-def embedding_udf(texts: pd.Series) -> pd.Series:
-    if not hasattr(embedding_udf, "_model"):
-        from sentence_transformers import SentenceTransformer
-
-        embedding_udf._model = SentenceTransformer(
-            EMBED_MODEL
-        )
-
-    vectors = embedding_udf._model.encode(
-        texts.tolist(),
-        batch_size=32,
-    )
-
-    return pd.Series(
-        [vector.tolist() for vector in vectors]
-    )
+# @pandas_udf(ArrayType(FloatType()))
+# def embedding_udf(texts: pd.Series) -> pd.Series:
+#     if not hasattr(embedding_udf, "_model"):
+#         from sentence_transformers import SentenceTransformer
+#
+#         embedding_udf._model = SentenceTransformer(
+#             EMBED_MODEL
+#         )
+#
+#     vectors = embedding_udf._model.encode(
+#         texts.tolist(),
+#         batch_size=32,
+#     )
+#
+#     return pd.Series(
+#         [vector.tolist() for vector in vectors]
+#     )
 
 
 # Finally writing the embedded description to a new table netflix_titles_silver ----------------------------------------
