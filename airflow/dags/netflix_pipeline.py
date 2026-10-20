@@ -4,7 +4,7 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 
 with DAG(
-    dag_id='netflix_pipeline',
+    dag_id='netflix_pipeline_v3.1.0',
     start_date=datetime(2026, 1, 1),
     schedule=None,
     catchup=False,
@@ -12,12 +12,12 @@ with DAG(
 ) as dag:
     bronze = BashOperator(
         task_id='bronze',
-        bash_command="echo 'Running Bronze'",
+        bash_command="docker run --rm pythonproject-bronze:latest",
     )
 
     silver = BashOperator(
         task_id='silver',
-        bash_command="echo 'Running Silver'",
+        bash_command="docker run --rm pythonproject-silver:latest",
     )
 
     bronze >> silver
