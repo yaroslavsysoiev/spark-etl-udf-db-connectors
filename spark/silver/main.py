@@ -1,14 +1,10 @@
-import os
-
-from pyspark.sql import SparkSession
 from pyspark.sql.functions import to_json, col, explode, split, trim
 
-from bronze.config import jdbc_url
-from silver.data_io import read_parquet, write_to_staging_table, save_aggregations_to_table
+from spark.silver.data_io import read_parquet, write_to_staging_table, save_aggregations_to_table
 
-from silver.country_to_iso_udf import country_to_iso
-from silver.spark_session import create_spark_session
-from silver.support_embedding_udf import embedding_udf, load_embeddings_to_pgvector
+from spark.silver.country_to_iso_udf import country_to_iso
+from spark.silver.spark_session import create_spark_session
+from spark.silver.support_embedding_udf import embedding_udf, load_embeddings_to_pgvector
 
 
 # The main function --------------------------------------------------------------------------------------------------

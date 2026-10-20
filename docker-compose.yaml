@@ -298,6 +298,7 @@ services:
 
     environment:
       POSTGRES_HOST: postgres
+      PYTHONPATH: /app
 
     restart: "no"
 
@@ -305,7 +306,7 @@ services:
       - /opt/spark/bin/spark-submit
       - --master
       - local[*]
-      - /app/bronze/main.py
+      - /app/spark/bronze/main.py
 
   silver:
     profiles:
@@ -334,7 +335,7 @@ services:
       - /opt/spark/bin/spark-submit
       - --master
       - local[*]
-      - /app/silver/main.py
+      - /app/spark/silver/main.py
 
 
 
