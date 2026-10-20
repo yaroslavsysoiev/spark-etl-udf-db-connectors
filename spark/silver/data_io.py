@@ -2,8 +2,8 @@ import os
 
 from pyspark.sql import SparkSession, DataFrame
 
-from bronze.config import jdbc_url
-from config import (
+from spark.bronze.config import jdbc_url
+from spark.silver.config import (
     BRONZE_PATH
 )
 
@@ -15,6 +15,10 @@ def read_parquet(spark: SparkSession) -> DataFrame:
         )
     )
 
+print(f"jdbc_url={jdbc_url}")
+print(f"POSTGRES_HOST={os.environ.get('POSTGRES_HOST')}")
+print(f"POSTGRES_DB={os.environ.get('POSTGRES_DB')}")
+print(f"POSTGRES_USER={os.environ.get('POSTGRES_USER')}")
 
 def write_to_staging_table(df: DataFrame) -> None:
     (

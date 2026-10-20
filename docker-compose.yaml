@@ -57,10 +57,10 @@ x-airflow-common:
     &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
-    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/${POSTGRES_DB}
     AIRFLOW__CORE__FERNET_KEY: ${FERNET_KEY}
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
     AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW__API_AUTH__JWT_SECRET:-airflow_jwt_secret}
     AIRFLOW__API_AUTH__JWT_ISSUER: ${AIRFLOW__API_AUTH__JWT_ISSUER:-airflow}
@@ -75,32 +75,21 @@ x-airflow-common:
     # The following line can be used to set a custom config file, stored in the local config folder
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
   volumes:
-    - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
-    - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
-    - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
-    - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
-  user: "${AIRFLOW_UID:-50000}:0"
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/dags:/opt/airflow/dags
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/logs:/opt/airflow/logs
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/config:/opt/airflow/config
+    - ${AIRFLOW_PROJ_DIR:-.}/airflow/plugins:/opt/airflow/plugins
+
+    - .:/workspace
+
+    - /var/run/docker.sock:/var/run/docker.sock
+  user: "0:0"
   depends_on:
     &airflow-common-depends-on
     postgres:
       condition: service_healthy
 
 services:
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
-    volumes:
-      - postgres-db-volume:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "airflow"]
-      interval: 10s
-      retries: 5
-      start_period: 5s
-    restart: always
-
   airflow-apiserver:
     <<: *airflow-common
     command: api-server
@@ -269,6 +258,86 @@ services:
       - airflow
     depends_on:
       <<: *airflow-common-depends-on
+  # ---------------------------------Postres/Bronze/Silver--------------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg18
+
+    env_file:
+      - .env
+
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./postgres:/docker-entrypoint-initdb.d
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
+
+  bronze:
+    profiles:
+      - etl
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    working_dir: /app
+
+    volumes:
+      - .:/app
+
+    env_file:
+      - .env
+
+    environment:
+      POSTGRES_HOST: postgres
+      PYTHONPATH: /app
+
+    restart: "no"
+
+    command:
+      - /opt/spark/bin/spark-submit
+      - --master
+      - local[*]
+      - /app/spark/bronze/main.py
+
+  silver:
+    profiles:
+      - etl
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    working_dir: /app
+
+    volumes:
+      - .:/app
+      - hf_cache:/root/.cache/huggingface
+
+    env_file:
+      - .env
+
+    environment:
+      POSTGRES_HOST: postgres
+      PYTHONPATH: /app
+
+    restart: "no"
+
+    command:
+      - /opt/spark/bin/spark-submit
+      - --master
+      - local[*]
+      - /app/spark/silver/main.py
+
+
 
   # You can enable flower by adding "--profile flower" option e.g. docker-compose --profile flower up
   # or by explicitly targeted on the command line e.g. docker-compose up flower.
@@ -276,3 +345,5 @@ services:
 
 volumes:
   postgres-db-volume:
+  postgres_data:
+  hf_cache:
