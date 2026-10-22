@@ -2,8 +2,8 @@ import os
 
 from pyspark.sql import SparkSession, DataFrame
 
-from spark.bronze.config import jdbc_url
-from spark.silver.config import (
+from spark.config import jdbc_url
+from spark.config import (
     BRONZE_PATH
 )
 

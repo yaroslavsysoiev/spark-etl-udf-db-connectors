@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession, DataFrame
 
-from spark.bronze.config import (
+from spark.config import (
     CSV_PATH,
     TABLE_NAME,
     jdbc_url,

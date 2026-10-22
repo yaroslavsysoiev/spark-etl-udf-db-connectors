@@ -2,6 +2,7 @@ import os
 
 CSV_PATH = "/app/data/raw/netflix_titles.csv"
 TABLE_NAME = "/app/data/bronze/netflix_titles"
+BRONZE_PATH = "/app/data/bronze/netflix_titles"
 
 jdbc_url = (
     f"jdbc:postgresql://"
