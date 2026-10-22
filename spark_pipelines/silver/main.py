@@ -23,6 +23,7 @@ def main():
     )
 
     # Aggregations -----------------------------------------------------------------------------------------------------
+    # #! Try adding persist() before explode() + unpersist
     aggregated_df = (
         silver_df
         .withColumn(
@@ -46,6 +47,7 @@ def main():
     save_aggregations_to_table(aggregated_df)
 
     # Embedding UDF -----------------------------------------------------------------------------------------------
+    # #! remove to_json()
     silver_df = silver_df.withColumn(
         "embedding",
         embedding_udf("description")

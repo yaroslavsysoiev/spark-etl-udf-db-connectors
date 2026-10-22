@@ -9,14 +9,13 @@ import psycopg2
 
 @pandas_udf(ArrayType(FloatType()))
 def embedding_udf(texts: pd.Series) -> pd.Series:
-    if not hasattr(embedding_udf, "_model"):
-        from sentence_transformers import SentenceTransformer
+    from sentence_transformers import SentenceTransformer
 
-        embedding_udf._model = SentenceTransformer(
-            EMBED_MODEL
-        )
+    model = SentenceTransformer(
+        EMBED_MODEL
+    )
 
-    vectors = embedding_udf._model.encode(
+    vectors = model.encode(
         texts.tolist(),
         batch_size=32,
     )
