@@ -303,10 +303,10 @@ services:
     restart: "no"
 
     command:
-      - /opt/spark_pipelines/bin/spark_pipelines-submit
+      - /opt/spark/bin/spark-submit
       - --master
       - local[*]
-      - /app/spark_pipelines/bronze/main.py
+      - /app/spark_pipelines/movies_pipeline/bronze/main.py
 
   silver:
     profiles:
@@ -332,10 +332,10 @@ services:
     restart: "no"
 
     command:
-      - /opt/spark_pipelines/bin/spark_pipelines-submit
+      - /opt/spark/bin/spark-submit
       - --master
       - local[*]
-      - /app/spark_pipelines/silver/main.py
+      - /app/spark_pipelines/movies_pipeline/silver/main.py
 
 
 

@@ -1,15 +1,15 @@
 from pyspark.sql.functions import to_json, col, explode, split, trim
 
-from spark_pipelines.movies_pipeline.silver.data_io import read_parquet, write_to_staging_table, save_aggregations_to_table
+from spark_pipelines.spark_utils.data_io import read_parquet, write_to_staging_table, write_aggregations_to_table
 
-from spark_pipelines.movies_pipeline.silver.country_to_iso_udf import country_to_iso
-from spark_pipelines.movies_pipeline.silver.spark_session import create_spark_session
-from spark_pipelines.movies_pipeline.silver.support_embedding_udf import embedding_udf, load_embeddings_to_pgvector
+from spark_pipelines.spark_utils.udfs.country_to_iso_udf import country_to_iso
+from spark_pipelines.spark_utils.spark_session import create_spark_session
+from spark_pipelines.spark_utils.udfs.support_embedding_udf import embedding_udf, load_embeddings_to_pgvector
 
 
 # The main function --------------------------------------------------------------------------------------------------
 def main():
-    spark = create_spark_session()
+    spark = create_spark_session("SilverETL")
 
     df = read_parquet(spark)
 
@@ -44,7 +44,7 @@ def main():
 
     aggregated_df.show(10, truncate=False)
 
-    save_aggregations_to_table(aggregated_df)
+    write_aggregations_to_table(aggregated_df)
 
     # Embedding UDF -----------------------------------------------------------------------------------------------
     # #! remove to_json()

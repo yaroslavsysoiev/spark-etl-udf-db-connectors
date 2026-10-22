@@ -2,10 +2,23 @@ import os
 
 from pyspark.sql import SparkSession, DataFrame
 
-from spark_pipelines.config import jdbc_url
 from spark_pipelines.config import (
-    BRONZE_PATH
+    CSV_PATH,
+    BRONZE_PATH,
+    TABLE_NAME,
+    jdbc_url,
+    connection_properties
 )
+
+# Readers
+
+def read_csv(spark: SparkSession) -> DataFrame:
+    return (
+        spark.read
+        .option("header", True)
+        .option("inferSchema", True)
+        .csv(CSV_PATH)
+    )
 
 
 def read_parquet(spark: SparkSession) -> DataFrame:
@@ -15,10 +28,32 @@ def read_parquet(spark: SparkSession) -> DataFrame:
         )
     )
 
-print(f"jdbc_url={jdbc_url}")
-print(f"POSTGRES_HOST={os.environ.get('POSTGRES_HOST')}")
-print(f"POSTGRES_DB={os.environ.get('POSTGRES_DB')}")
-print(f"POSTGRES_USER={os.environ.get('POSTGRES_USER')}")
+
+def read_from_postgres(spark: SparkSession) -> DataFrame:
+    return spark.read.jdbc(
+        url=jdbc_url,
+        table=TABLE_NAME,
+        properties=connection_properties
+    )
+
+# Writers
+
+def write_to_parquet(df: DataFrame) -> None:
+    (
+        df.write
+        .mode("overwrite")
+        .parquet(TABLE_NAME)
+    )
+
+
+def write_to_postgres(df: DataFrame) -> None:
+    df.write.jdbc(
+        url=jdbc_url,
+        table=TABLE_NAME,
+        mode="overwrite",
+        properties=connection_properties
+    )
+
 
 def write_to_staging_table(df: DataFrame) -> None:
     (
@@ -33,8 +68,7 @@ def write_to_staging_table(df: DataFrame) -> None:
         .save()
     )
 
-
-def save_aggregations_to_table(df: DataFrame) -> None:
+def write_aggregations_to_table(df: DataFrame) -> None:
     (
         df.write
         .format("jdbc")
