@@ -9,14 +9,17 @@ from spark_pipelines.config import (
 )
 
 
-def read_csv(spark: SparkSession) -> DataFrame:
+def read_csv(
+        spark: SparkSession,
+        path: str
+) -> DataFrame:
+
     return (
         spark.read
         .option("header", True)
         .option("inferSchema", True)
-        .csv(CSV_PATH)
+        .csv(path)
     )
-
 
 def read_parquet(spark: SparkSession) -> DataFrame:
     return (
