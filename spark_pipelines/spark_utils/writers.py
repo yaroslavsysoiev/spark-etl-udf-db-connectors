@@ -2,7 +2,7 @@ import os
 
 from pyspark.sql import DataFrame
 
-from spark_pipelines.config import (
+from spark_pipelines.movies_pipeline.config import (
     TABLE_NAME,
     jdbc_url,
     connection_properties
@@ -24,29 +24,25 @@ def write_to_postgres(df: DataFrame) -> None:
         properties=connection_properties
     )
 
-
-def write_to_staging_table(df: DataFrame) -> None:
-    (
+def jdbc_writer(df, table_name: str):
+    return (
         df.write
         .format("jdbc")
         .option("url", jdbc_url)
-        .option("dbtable", "public.netflix_titles_silver_staging")
-        .option("user", os.environ["POSTGRES_USER"])
-        .option("password", os.environ["POSTGRES_PASSWORD"])
-        .option("driver", "org.postgresql.Driver")
-        .mode("overwrite")
-        .save()
-    )
-
-def write_aggregations_to_table(df: DataFrame) -> None:
-    (
-        df.write
-        .format("jdbc")
-        .option("url", jdbc_url)
-        .option("dbtable", "public.netflix_titles_aggregated_table")
-        .option("user", os.environ["POSTGRES_USER"])
-        .option("password", os.environ["POSTGRES_PASSWORD"])
-        .option("driver", "org.postgresql.Driver")
-        .mode("overwrite")
-        .save()
+        .option(
+            "user",
+            os.environ["POSTGRES_USER"]
+        )
+        .option(
+            "password",
+            os.environ["POSTGRES_PASSWORD"]
+        )
+        .option(
+            "driver",
+            "org.postgresql.Driver"
+        )
+        .option(
+            "dbtable",
+            table_name
+        )
     )
