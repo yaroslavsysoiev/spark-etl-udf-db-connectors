@@ -1,42 +1,12 @@
 import os
 
-from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql import DataFrame
 
 from spark_pipelines.config import (
-    CSV_PATH,
-    BRONZE_PATH,
     TABLE_NAME,
     jdbc_url,
     connection_properties
 )
-
-# Readers
-
-def read_csv(spark: SparkSession) -> DataFrame:
-    return (
-        spark.read
-        .option("header", True)
-        .option("inferSchema", True)
-        .csv(CSV_PATH)
-    )
-
-
-def read_parquet(spark: SparkSession) -> DataFrame:
-    return (
-        spark.read.parquet(
-            BRONZE_PATH
-        )
-    )
-
-
-def read_from_postgres(spark: SparkSession) -> DataFrame:
-    return spark.read.jdbc(
-        url=jdbc_url,
-        table=TABLE_NAME,
-        properties=connection_properties
-    )
-
-# Writers
 
 def write_to_parquet(df: DataFrame) -> None:
     (

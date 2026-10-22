@@ -1,6 +1,7 @@
 from pyspark.sql.functions import to_json, col, explode, split, trim
 
-from spark_pipelines.spark_utils.data_io import read_parquet, write_to_staging_table, write_aggregations_to_table
+from spark_pipelines.spark_utils.readers import read_parquet
+from spark_pipelines.spark_utils.writers import write_to_staging_table, write_aggregations_to_table
 
 from spark_pipelines.spark_utils.udfs.country_to_iso_udf import country_to_iso
 from spark_pipelines.spark_utils.spark_session import create_spark_session

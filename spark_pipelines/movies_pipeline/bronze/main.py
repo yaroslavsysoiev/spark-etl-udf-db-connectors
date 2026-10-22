@@ -1,9 +1,7 @@
 from spark_pipelines.spark_utils.spark_session import create_spark_session
 
-from spark_pipelines.spark_utils.data_io import (
-    read_csv,
-    write_to_parquet,
-)
+from spark_pipelines.spark_utils.readers import read_csv
+from spark_pipelines.spark_utils.writers import write_to_parquet
 
 
 def main():
