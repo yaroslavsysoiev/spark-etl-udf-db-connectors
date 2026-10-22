@@ -1,7 +1,6 @@
 from pyspark.sql import SparkSession, DataFrame
 
-from spark_pipelines.config import (
-    CSV_PATH,
+from spark_pipelines.movies_pipeline.config import (
     BRONZE_PATH,
     TABLE_NAME,
     jdbc_url,
@@ -13,13 +12,13 @@ def read_csv(
         spark: SparkSession,
         path: str
 ) -> DataFrame:
-
     return (
         spark.read
         .option("header", True)
         .option("inferSchema", True)
         .csv(path)
     )
+
 
 def read_parquet(spark: SparkSession) -> DataFrame:
     return (

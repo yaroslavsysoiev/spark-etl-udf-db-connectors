@@ -1,7 +1,7 @@
 from pyspark.sql.functions import to_json, col, explode, split, trim
 
 from spark_pipelines.spark_utils.readers import read_parquet
-from spark_pipelines.spark_utils.writers import write_to_staging_table, write_aggregations_to_table
+from spark_pipelines.spark_utils.writers import jdbc_writer
 
 from spark_pipelines.spark_utils.udfs.country_to_iso_udf import country_to_iso
 from spark_pipelines.spark_utils.spark_session import create_spark_session
@@ -45,7 +45,10 @@ def main():
 
     aggregated_df.show(10, truncate=False)
 
-    write_aggregations_to_table(aggregated_df)
+    jdbc_writer(
+        aggregated_df,
+        "public.netflix_titles_aggregated_table"
+    ).mode("overwrite").save()
 
     # Embedding UDF -----------------------------------------------------------------------------------------------
     # #! remove to_json()
@@ -60,7 +63,10 @@ def main():
     ).drop("embedding"))
 
     # Saving embeddings to an intermediate table -----------------------------------------------------------------------
-    write_to_staging_table(staging_df)
+    jdbc_writer(
+        staging_df,
+        "public.netflix_titles_silver_staging"
+    ).mode("overwrite").save()
 
     # Load data from the staging table into the final Silver table
     load_embeddings_to_pgvector()
