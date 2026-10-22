@@ -1,6 +1,6 @@
-from spark.bronze.spark_session import create_spark_session
+from spark_pipelines.movies_pipeline.bronze.spark_session import create_spark_session
 
-from spark.bronze.data_io import (
+from spark_pipelines.movies_pipeline.bronze.data_io import (
     read_csv,
     write_to_parquet,
 )

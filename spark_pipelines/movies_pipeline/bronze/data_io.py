@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession, DataFrame
 
-from spark.config import (
+from spark_pipelines.config import (
     CSV_PATH,
     TABLE_NAME,
     jdbc_url,
