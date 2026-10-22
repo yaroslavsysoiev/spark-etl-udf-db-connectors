@@ -6,9 +6,9 @@ from airflow.providers.standard.operators.bash import BashOperator
 with DAG(
     dag_id='netflix_pipeline_v3.2.4',
     start_date=datetime(2026, 1, 1),
-    schedule=None,
+    schedule='@daily',
     catchup=False,
-    tags=['spark', 'netflix', 'etl'],
+    tags=['spark_pipelines', 'netflix', 'etl'],
 ) as dag:
     bronze = BashOperator(
         task_id='bronze',
