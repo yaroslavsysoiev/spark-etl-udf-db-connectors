@@ -1,11 +1,11 @@
-from pyspark.sql.functions import to_json, col, explode, split, trim
+from pyspark.sql.functions import col, explode, split, trim
 
-from spark_pipelines.spark_utils.readers import read_parquet
-from spark_pipelines.spark_utils.writers import jdbc_writer
-
-from spark_pipelines.spark_utils.udfs.country_to_iso_udf import country_to_iso
 from spark_pipelines.spark_utils.spark_session import create_spark_session
-from spark_pipelines.spark_utils.udfs.support_embedding_udf import embedding_udf, load_embeddings_to_pgvector
+from spark_pipelines.spark_utils.readers import read_parquet
+from spark_pipelines.spark_utils.writers import jdbc_writer, write_embeddings_to_postgres
+from spark_pipelines.spark_utils.udfs.embedding_udf import generate_embeddings
+from spark_pipelines.spark_utils.udfs.country_to_iso_udf import country_to_iso
+
 
 
 # The main function --------------------------------------------------------------------------------------------------
@@ -51,25 +51,13 @@ def main():
     ).mode("overwrite").save()
 
     # Embedding UDF -----------------------------------------------------------------------------------------------
-    # #! remove to_json()
     silver_df = silver_df.withColumn(
         "embedding",
-        embedding_udf("description")
+        generate_embeddings("description")
     )
 
-    staging_df = (silver_df.withColumn(
-        "embedding_text",
-        to_json(col("embedding")),
-    ).drop("embedding"))
+    write_embeddings_to_postgres(silver_df)
 
-    # Saving embeddings to an intermediate table -----------------------------------------------------------------------
-    jdbc_writer(
-        staging_df,
-        "public.netflix_titles_silver_staging"
-    ).mode("overwrite").save()
-
-    # Load data from the staging table into the final Silver table
-    load_embeddings_to_pgvector()
 
     spark.stop()
 
