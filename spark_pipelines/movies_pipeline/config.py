@@ -3,6 +3,7 @@ import os
 CSV_PATH = "/app/data/raw/netflix_titles.csv"
 TABLE_NAME = "/app/data/bronze/netflix_titles"
 BRONZE_PATH = "/app/data/bronze/netflix_titles"
+AGGREGATED_TABLE_NAME = "public.netflix_titles_aggregated_table"
 
 jdbc_url = (
     f"jdbc:postgresql://"
