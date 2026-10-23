@@ -1,10 +1,12 @@
 import os
 import psycopg2
+from psycopg2.extras import execute_batch
+from pgvector.psycopg2 import register_vector
 
 from pyspark.sql import DataFrame
 
-from pgvector.psycopg2 import register_vector
-from psycopg2.extras import execute_batch
+import logging
+from typing import Iterator
 
 from spark_pipelines.movies_pipeline.config import (
     TABLE_NAME,
@@ -12,6 +14,7 @@ from spark_pipelines.movies_pipeline.config import (
     connection_properties
 )
 
+logger = logging.getLogger(__name__)
 
 def write_to_parquet(df: DataFrame) -> None:
     (
@@ -54,17 +57,11 @@ def jdbc_writer(df, table_name: str):
     )
 
 
-def write_embeddings_to_postgres(df: DataFrame) -> None:
-    df.foreachPartition(
-        _insert_embeddings_partition
-    )
-
-
-def _insert_embeddings_partition(rows):
+def _insert_embeddings_partition(rows: Iterator) -> None:
     rows = list(rows)
 
-    if not rows:
-        return
+    if len(rows) == 0:
+        return None
 
     conn = psycopg2.connect(
         host=os.environ["POSTGRES_HOST"],
@@ -90,7 +87,7 @@ def _insert_embeddings_partition(rows):
                      description,
                      embedding)
                     VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (show_id)
-                        DO
+                                DO
                     UPDATE SET
                         title = EXCLUDED.title,
                         country = EXCLUDED.country,
@@ -113,3 +110,13 @@ def _insert_embeddings_partition(rows):
                 )
     finally:
         conn.close()
+
+
+def write_embeddings_to_postgres(df: DataFrame) -> None:
+    """
+    Write embedding vectors directly to PostgreSQL using pgvector adapters.
+    """
+
+    df.foreachPartition(
+        _insert_embeddings_partition
+    )
