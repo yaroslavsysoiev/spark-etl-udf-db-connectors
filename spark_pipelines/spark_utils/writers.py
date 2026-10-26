@@ -4,64 +4,44 @@ from psycopg2.extras import execute_batch
 from pgvector.psycopg2 import register_vector
 
 from pyspark.sql import DataFrame
+from pyspark.sql.readwriter import DataFrameWriter
 
-import logging
-from typing import Iterator
+from typing import Iterator, Any
 
 from spark_pipelines.movies_pipeline.config import (
-    TABLE_NAME,
-    jdbc_url,
-    connection_properties
+    BRONZE_PATH,
+    SILVER_TABLE_NAME,
+    JDBC_URL,
+    CONNECTION_PROPERTIES
 )
 
-logger = logging.getLogger(__name__)
 
 def write_to_parquet(df: DataFrame) -> None:
     (
         df.write
         .mode("overwrite")
-        .parquet(TABLE_NAME)
+        .parquet(BRONZE_PATH)
     )
 
 
-def write_to_postgres(df: DataFrame) -> None:
-    df.write.jdbc(
-        url=jdbc_url,
-        table=TABLE_NAME,
-        mode="overwrite",
-        properties=connection_properties
-    )
-
-
-def jdbc_writer(df, table_name: str):
+def jdbc_writer(
+    df: DataFrame,
+    table_name: str
+) -> DataFrameWriter:
     return (
         df.write
         .format("jdbc")
-        .option("url", jdbc_url)
-        .option(
-            "user",
-            os.environ["POSTGRES_USER"]
-        )
-        .option(
-            "password",
-            os.environ["POSTGRES_PASSWORD"]
-        )
-        .option(
-            "driver",
-            "org.postgresql.Driver"
-        )
-        .option(
-            "dbtable",
-            table_name
-        )
+        .option("url", JDBC_URL)
+        .option("dbtable", table_name)
+        .options(**CONNECTION_PROPERTIES)
     )
 
 
-def _insert_embeddings_partition(rows: Iterator) -> None:
+def _insert_embeddings_partition(rows: Iterator[Any]) -> None:
     rows = list(rows)
 
-    if len(rows) == 0:
-        return None
+    if not rows:
+        return
 
     conn = psycopg2.connect(
         host=os.environ["POSTGRES_HOST"],
@@ -78,17 +58,19 @@ def _insert_embeddings_partition(rows: Iterator) -> None:
             with conn.cursor() as cur:
                 execute_batch(
                     cur,
-                    """
-                    INSERT INTO public.netflix_titles_silver
-                    (show_id,
-                     title,
-                     country,
-                     country_code,
-                     description,
-                     embedding)
-                    VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (show_id)
-                                DO
-                    UPDATE SET
+                    f"""
+                    INSERT INTO {SILVER_TABLE_NAME}
+                    (
+                         show_id,
+                         title,
+                         country,
+                         country_code,
+                         description,
+                         embedding
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (show_id)
+                    DO UPDATE SET
                         title = EXCLUDED.title,
                         country = EXCLUDED.country,
                         country_code = EXCLUDED.country_code,

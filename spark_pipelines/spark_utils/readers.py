@@ -1,10 +1,9 @@
 from pyspark.sql import SparkSession, DataFrame
 
 from spark_pipelines.movies_pipeline.config import (
-    BRONZE_PATH,
-    TABLE_NAME,
-    jdbc_url,
-    connection_properties
+    BRONZE_PATH ,
+    JDBC_URL,
+    CONNECTION_PROPERTIES
 )
 
 
@@ -30,7 +29,7 @@ def read_parquet(spark: SparkSession) -> DataFrame:
 
 def read_from_postgres(spark: SparkSession) -> DataFrame:
     return spark.read.jdbc(
-        url=jdbc_url,
-        table=TABLE_NAME,
-        properties=connection_properties
+        url=JDBC_URL,
+        table=table_name ,
+        properties=CONNECTION_PROPERTIES
     )

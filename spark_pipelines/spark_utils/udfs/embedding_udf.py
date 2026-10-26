@@ -1,7 +1,7 @@
-import os
-
 from pyspark.sql.functions import pandas_udf
 from pyspark.sql.types import ArrayType, FloatType
+
+from spark_pipelines.movies_pipeline.config import EMBED_MODEL
 
 import pandas as pd
 import psycopg2
@@ -23,6 +23,3 @@ def generate_embeddings(texts: pd.Series) -> pd.Series:
     return pd.Series(
         [vector.tolist() for vector in vectors]
     )
-
-
-EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
