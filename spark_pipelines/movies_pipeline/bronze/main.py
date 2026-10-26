@@ -16,7 +16,7 @@ def main():
     spark = create_spark_session("BronzeETL")
 
     try:
-        df = read_csv(spark, CSV_PATH)
+        df = read_csv(spark, CSV_PATH).cache()
 
         logger.info(
             "Successfully read %s rows from %s",
