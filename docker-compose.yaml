@@ -290,9 +290,6 @@ services:
 
     working_dir: /app
 
-    volumes:
-      - .:/app
-
     env_file:
       - .env
 
@@ -319,7 +316,6 @@ services:
     working_dir: /app
 
     volumes:
-      - .:/app
       - hf_cache:/root/.cache/huggingface
 
     env_file:
