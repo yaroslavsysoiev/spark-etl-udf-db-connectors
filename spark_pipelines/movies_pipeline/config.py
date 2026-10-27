@@ -1,4 +1,5 @@
 import os
+import torch
 
 #Paths
 CSV_PATH = "/app/data/raw/netflix_titles.csv"
@@ -10,6 +11,8 @@ AGGREGATED_TABLE_NAME = "public.netflix_titles_aggregated_table"
 
 #Embedding_model
 EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+BATCH_SIZE = 32
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 JDBC_URL = (
     f"jdbc:postgresql://"
