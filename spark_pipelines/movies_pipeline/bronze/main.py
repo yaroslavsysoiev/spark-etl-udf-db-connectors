@@ -1,10 +1,10 @@
 import logging
 
-from spark_pipelines.movies_pipeline.config import CSV_PATH, BRONZE_PATH
+from spark_pipelines.movies_pipeline.config import CSV_PATH, BRONZE_DELTA_PATH
 from spark_pipelines.spark_utils.spark_session import create_spark_session
 
 from spark_pipelines.spark_utils.readers import read_csv
-from spark_pipelines.spark_utils.writers import write_to_parquet
+from spark_pipelines.spark_utils.writers import write_to_delta
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +31,14 @@ def main():
 
         logger.info(
             "Writing data to %s",
-            BRONZE_PATH
+            BRONZE_DELTA_PATH
         )
 
-        write_to_parquet(df)
+        write_to_delta(df)
 
         logger.info(
             "Successfully wrote Bronze parquet files to %s",
-            BRONZE_PATH
+            BRONZE_DELTA_PATH
         )
 
     finally:

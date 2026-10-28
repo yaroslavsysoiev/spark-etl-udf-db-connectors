@@ -288,6 +288,9 @@ services:
       context: .
       dockerfile: Dockerfile
 
+    volumes:
+      - ./data:/app/data
+
     working_dir: /app
 
     env_file:
@@ -313,10 +316,11 @@ services:
       context: .
       dockerfile: Dockerfile
 
-    working_dir: /app
-
     volumes:
+      - ./data:/app/data
       - hf_cache:/root/.cache/huggingface
+
+    working_dir: /app
 
     env_file:
       - .env

@@ -3,7 +3,7 @@ import torch
 
 #Paths
 CSV_PATH = "/app/data/raw/netflix_titles.csv"
-BRONZE_PATH = "/app/data/bronze/netflix_titles"
+BRONZE_DELTA_PATH = "/app/data/bronze/netflix_titles"
 
 # Tables
 SILVER_TABLE_NAME = "public.netflix_titles_silver"

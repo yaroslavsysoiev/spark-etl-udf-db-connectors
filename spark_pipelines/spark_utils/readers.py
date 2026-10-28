@@ -1,7 +1,7 @@
 from pyspark.sql import SparkSession, DataFrame
 
 from spark_pipelines.movies_pipeline.config import (
-    BRONZE_PATH ,
+    BRONZE_DELTA_PATH ,
     JDBC_URL,
     CONNECTION_PROPERTIES
 )
@@ -19,11 +19,11 @@ def read_csv(
     )
 
 
-def read_parquet(spark: SparkSession) -> DataFrame:
+def read_delta(spark: SparkSession) -> DataFrame:
     return (
-        spark.read.parquet(
-            BRONZE_PATH
-        )
+        spark.read
+        .format("delta")
+        .load(BRONZE_DELTA_PATH)
     )
 
 

@@ -9,18 +9,19 @@ from pyspark.sql.readwriter import DataFrameWriter
 from typing import Iterator, Any
 
 from spark_pipelines.movies_pipeline.config import (
-    BRONZE_PATH,
+    BRONZE_DELTA_PATH,
     SILVER_TABLE_NAME,
     JDBC_URL,
     CONNECTION_PROPERTIES
 )
 
 
-def write_to_parquet(df: DataFrame) -> None:
+def write_to_delta(df: DataFrame) -> None:
     (
         df.write
+        .format("delta")
         .mode("overwrite")
-        .parquet(BRONZE_PATH)
+        .save(BRONZE_DELTA_PATH)
     )
 
 

@@ -5,7 +5,7 @@ from pyspark.sql.functions import col, explode, split, trim
 
 from spark_pipelines.movies_pipeline.config import AGGREGATED_TABLE_NAME
 from spark_pipelines.spark_utils.spark_session import create_spark_session
-from spark_pipelines.spark_utils.readers import read_parquet
+from spark_pipelines.spark_utils.readers import read_delta
 from spark_pipelines.spark_utils.writers import jdbc_writer, write_embeddings_to_postgres
 
 from spark_pipelines.spark_utils.udfs.embedding_udf import generate_embeddings
@@ -18,7 +18,7 @@ def main():
 
     spark = create_spark_session("SilverETL")
 
-    df = read_parquet(spark)
+    df = read_delta(spark)
 
     silver_df = (
         df
