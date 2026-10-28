@@ -5,5 +5,7 @@ CREATE TABLE IF NOT EXISTS public.netflix_titles_silver
     country TEXT,
     country_code TEXT,
     description TEXT,
-    embedding VECTOR(384)
+    embedding VECTOR(384),
+    ingestion_timestamp TIMESTAMP,
+    processed_timestamp TIMESTAMP
 );

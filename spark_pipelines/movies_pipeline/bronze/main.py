@@ -1,8 +1,9 @@
 import logging
 
+from pyspark.sql.functions import current_timestamp, lit
+
 from spark_pipelines.movies_pipeline.config import CSV_PATH, BRONZE_DELTA_PATH
 from spark_pipelines.spark_utils.spark_session import create_spark_session
-
 from spark_pipelines.spark_utils.readers import read_csv
 from spark_pipelines.spark_utils.writers import write_to_delta
 
@@ -24,15 +25,21 @@ def main():
             CSV_PATH
         )
 
-        logger.info(
-            "Successfully read CSV file from %s",
-            CSV_PATH
+        df = (
+            df
+            .withColumn("ingestion_timestamp", current_timestamp())
         )
 
         logger.info(
             "Writing data to %s",
             BRONZE_DELTA_PATH
         )
+
+        df.printSchema()
+
+        df.select(
+            "ingestion_timestamp"
+        ).show(5, False)
 
         write_to_delta(df)
 

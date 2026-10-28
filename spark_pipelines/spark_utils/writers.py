@@ -21,6 +21,7 @@ def write_to_delta(df: DataFrame) -> None:
         df.write
         .format("delta")
         .mode("overwrite")
+        .option("overwriteSchema", "true")
         .save(BRONZE_DELTA_PATH)
     )
 
@@ -67,16 +68,20 @@ def _insert_embeddings_partition(rows: Iterator[Any]) -> None:
                          country,
                          country_code,
                          description,
-                         embedding
+                         embedding,
+                         ingestion_timestamp,
+                         processed_timestamp
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (show_id)
                     DO UPDATE SET
                         title = EXCLUDED.title,
                         country = EXCLUDED.country,
                         country_code = EXCLUDED.country_code,
                         description = EXCLUDED.description,
-                        embedding = EXCLUDED.embedding
+                        embedding = EXCLUDED.embedding,
+                        ingestion_timestamp = EXCLUDED.ingestion_timestamp,
+                        processed_timestamp = EXCLUDED.processed_timestamp
                     """,
                     [
                         (
@@ -86,6 +91,8 @@ def _insert_embeddings_partition(rows: Iterator[Any]) -> None:
                             row.country_code,
                             row.description,
                             row.embedding,
+                            row.ingestion_timestamp,
+                            row.processed_timestamp
                         )
                         for row in rows
                     ],

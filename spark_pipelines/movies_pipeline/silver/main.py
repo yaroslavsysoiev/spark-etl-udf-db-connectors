@@ -2,6 +2,7 @@ import logging
 
 from pyspark import StorageLevel
 from pyspark.sql.functions import col, explode, split, trim
+from pyspark.sql.functions import current_timestamp
 
 from spark_pipelines.movies_pipeline.config import AGGREGATED_TABLE_NAME
 from spark_pipelines.spark_utils.spark_session import create_spark_session
@@ -26,6 +27,10 @@ def main():
         .withColumn(
         "country_code",
         country_to_iso("country")
+        )
+        .withColumn(
+            "processed_timestamp",
+            current_timestamp()
         )
         .persist(StorageLevel.MEMORY_AND_DISK)
     )
