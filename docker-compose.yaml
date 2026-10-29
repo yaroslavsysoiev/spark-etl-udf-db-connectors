@@ -387,6 +387,28 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  streaming-ingestion:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    volumes:
+      - ./data:/app/data
+
+    working_dir: /app
+
+    env_file:
+      - .env
+
+    environment:
+      PYTHONPATH: /app
+
+    command:
+      - /opt/spark/bin/spark-submit
+      - --master
+      - local[*]
+      - /app/spark_pipelines/streaming_pipeline/ingestion/kafka_to_console.py
+
 volumes:
   postgres-db-volume:
   postgres_data:
