@@ -359,12 +359,12 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
 
   minio:
     image: coollabsio/minio:latest
@@ -387,27 +387,65 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  streaming-producer:
+    profiles: [ "streaming" ]
+    build:
+      context: .
+      dockerfile: Dockerfile.producer
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      MINIO_ENDPOINT: minio:9000
+    depends_on:
+      - kafka
+      - minio
+    restart: unless-stopped
+
   streaming-ingestion:
+    profiles: [ "streaming" ]
     build:
       context: .
       dockerfile: Dockerfile
-
     volumes:
       - ./data:/app/data
-
     working_dir: /app
-
     env_file:
       - .env
-
     environment:
       PYTHONPATH: /app
-
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+    depends_on:
+      - kafka
     command:
       - /opt/spark/bin/spark-submit
       - --master
       - local[*]
-      - /app/spark_pipelines/streaming_pipeline/ingestion/kafka_to_console.py
+      - /app/spark_pipelines/streaming_pipeline/ingestion/kafka_to_delta.py
+    restart: unless-stopped
+
+  streaming-mongo:
+    profiles: [ "streaming" ]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./data:/app/data
+    working_dir: /app
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+      MONGO_URI: mongodb://mongodb:27017
+    depends_on:
+      - mongodb
+    command:
+      - /opt/spark/bin/spark-submit
+      - --master
+      - local[*]
+      - /app/spark_pipelines/streaming_pipeline/analytics/delta_to_mongodb.py
+    restart: unless-stopped
 
 volumes:
   postgres-db-volume:
