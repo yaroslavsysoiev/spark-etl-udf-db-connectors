@@ -1,6 +1,10 @@
+pyspark==3.5.3
+delta-spark==3.2.0
+
 pandas
 pyarrow
 pycountry
 sentence-transformers
 torch
 psycopg2-binary
+pgvector
