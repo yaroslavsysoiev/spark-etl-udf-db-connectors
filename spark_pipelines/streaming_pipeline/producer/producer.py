@@ -43,8 +43,9 @@ def ensure_bucket(client: Minio) -> None:
 
 
 def seed_if_empty(client: Minio) -> None:
-    objects = list(client.list_objects(MINIO_BUCKET, prefix="inbox/", recursive=True))
-    if objects:
+    inbox = list(client.list_objects(MINIO_BUCKET, prefix="inbox/", recursive=True))
+    processed = list(client.list_objects(MINIO_BUCKET, prefix="processed/", recursive=True))
+    if inbox or processed:
         return
 
     for event in SEED_EVENTS:
@@ -102,15 +103,18 @@ def main() -> None:
                     print(f"Published {key} from {obj.object_name}")
 
                 producer.flush()
+                processed.add(obj.object_name)
 
                 archive_name = obj.object_name.replace("inbox/", "processed/", 1)
-                client.copy_object(
-                    MINIO_BUCKET,
-                    archive_name,
-                    CopySource(MINIO_BUCKET, obj.object_name),
-                )
-                client.remove_object(MINIO_BUCKET, obj.object_name)
-                processed.add(obj.object_name)
+                try:
+                    client.copy_object(
+                        MINIO_BUCKET,
+                        archive_name,
+                        CopySource(MINIO_BUCKET, obj.object_name),
+                    )
+                    client.remove_object(MINIO_BUCKET, obj.object_name)
+                except Exception as exc:
+                    print(f"Archive failed for {obj.object_name}: {exc}")
 
         except S3Error as exc:
             print(f"MinIO error: {exc}")
