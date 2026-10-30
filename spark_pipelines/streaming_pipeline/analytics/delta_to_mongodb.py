@@ -1,4 +1,7 @@
-import json
+git diffimport json
+import os
+import time
+
 from pymongo import MongoClient
 from spark_pipelines.spark_utils.spark_session import create_spark_session
 from spark_pipelines.streaming_pipeline.config import (
@@ -41,12 +44,21 @@ def write_unstructured_to_mongo(batch_df, batch_id: int) -> None:
             docs.append(payload)
 
         if docs:
-            collection.insert_many(docs)
+            result = collection.insert_many(docs)
+            print(f"Mongo batch {batch_id}: inserted {len(result.inserted_ids)} docs")
     finally:
         client.close()
 
 
+def wait_for_delta_table(path: str) -> None:
+    delta_log = os.path.join(path, "_delta_log")
+    while not os.path.isdir(delta_log):
+        print(f"Waiting for Delta table at {path}")
+        time.sleep(5)
+
+
 def main() -> None:
+    wait_for_delta_table(BRONZE_DELTA_PATH)
     spark = create_spark_session("DeltaToMongo")
 
     bronze = (
