@@ -1,7 +1,7 @@
 from pyspark.sql.functions import col, current_timestamp
 
 from spark_pipelines.spark_utils.spark_session import create_spark_session
-from spark_pipelines.streaming_pipeline.config import (
+from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.config import (
     BRONZE_DELTA_PATH,
     CHECKPOINT_KAFKA_TO_DELTA,
     KAFKA_BOOTSTRAP_SERVERS,

@@ -7,7 +7,7 @@ from minio import Minio
 from minio.commonconfig import CopySource
 from minio.error import S3Error
 
-from spark_pipelines.streaming_pipeline.config import (
+from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.config import (
     KAFKA_BOOTSTRAP_SERVERS,
     KAFKA_TOPIC,
     MINIO_BUCKET,
@@ -17,7 +17,7 @@ from spark_pipelines.streaming_pipeline.config import (
     MINIO_SECURE,
     PRODUCER_POLL_SECONDS,
 )
-from spark_pipelines.streaming_pipeline.models.event import make_event
+from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.models.event import make_event
 
 
 SEED_EVENTS = [

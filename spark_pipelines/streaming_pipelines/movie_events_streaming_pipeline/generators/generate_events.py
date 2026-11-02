@@ -5,7 +5,7 @@ import uuid
 
 from minio import Minio
 
-from spark_pipelines.streaming_pipeline.config import (
+from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.config import (
     MINIO_ENDPOINT,
     MINIO_ROOT_USER,
     MINIO_ROOT_PASSWORD,
