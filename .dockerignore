@@ -13,3 +13,11 @@ airflow/logs
 
 *.pyc
 *.pyo
+
+# Local configuration and runtime files are not image inputs.
+.env
+.env.*
+airflow
+postgres
+**/__pycache__
+**/*.pyc
