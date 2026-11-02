@@ -2,9 +2,17 @@ FROM apache/spark:3.5.3-scala2.12-java17-python3-ubuntu
 
 USER root
 
+# Compose does not expose a GPU; use CPU PyTorch without CUDA/Triton downloads.
+# Keep this in a separate layer so other dependency changes reuse it.
+ARG TORCH_VERSION=2.10.0+cpu
+RUN pip3 install --no-cache-dir --timeout 120 --retries 5 \
+    --index-url https://download.pytorch.org/whl/cpu "torch==${TORCH_VERSION}"
+
 COPY requirements.txt /tmp/requirements.txt
 
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
+# Explicitly retain the CPU build when resolving sentence-transformers dependencies.
+RUN pip3 install --no-cache-dir --timeout 120 --retries 5 \
+    -r /tmp/requirements.txt "torch==${TORCH_VERSION}"
 
 # Delta Lake, PostgreSQL and Kafka dependencies
 RUN python3 - <<'PY'
@@ -41,7 +49,7 @@ for url, destination in jars.items():
     urllib.request.urlretrieve(url, destination)
 PY
 
-COPY . /app
+COPY spark_pipelines /app/spark_pipelines
 
 WORKDIR /app
 

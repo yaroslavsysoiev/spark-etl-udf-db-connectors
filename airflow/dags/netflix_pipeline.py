@@ -1,4 +1,4 @@
-from airflow import DAG
+git addfrom airflow import DAG
 from airflow.providers.docker.operators.docker import DockerOperator
 
 from datetime import datetime
@@ -15,11 +15,11 @@ with DAG(
     bronze = DockerOperator(
         task_id="bronze",
         mount_tmp_dir=False,
-        image="pythonproject-bronze:latest",
+        image="spark-etl-spark:local",
         command="""
     /opt/spark/bin/spark-submit
     --master local[*]
-    /app/spark_pipelines/movies_pipeline/bronze/main.py
+    /app/spark_pipelines/batch_pipelines/movies_pipeline/bronze/main.py
     """,
         network_mode="pythonproject_default",
         environment=POSTGRES_ENV,
@@ -29,11 +29,11 @@ with DAG(
     silver = DockerOperator(
         task_id="silver",
         mount_tmp_dir=False,
-        image="pythonproject-silver:latest",
+        image="spark-etl-spark:local",
         command="""
     /opt/spark/bin/spark-submit
     --master local[*]
-    /app/spark_pipelines/movies_pipeline/silver/main.py
+    /app/spark_pipelines/batch_pipelines/movies_pipeline/silver/main.py
     """,
         network_mode="pythonproject_default",
         environment=POSTGRES_ENV,

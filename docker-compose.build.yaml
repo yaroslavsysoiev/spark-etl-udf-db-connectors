@@ -1,0 +1,12 @@
+# Build each shared image once; regular Compose runs only consume these images.
+# Usage: docker compose -f docker-compose.yaml -f docker-compose.build.yaml build bronze streaming-producer
+services:
+  bronze:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+  streaming-producer:
+    build:
+      context: .
+      dockerfile: Dockerfile.producer

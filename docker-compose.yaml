@@ -89,6 +89,15 @@ x-airflow-common:
     postgres:
       condition: service_healthy
 
+# Build shared images explicitly with docker-compose.build.yaml.
+x-spark-image: &spark-image
+  image: spark-etl-spark:local
+  pull_policy: never
+
+x-producer-image: &producer-image
+  image: spark-etl-producer:local
+  pull_policy: never
+
 services:
   airflow-apiserver:
     profiles: [ "airflow" ]
@@ -290,11 +299,10 @@ services:
       - etl
       - movies_pipeline
 
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *spark-image
 
     volumes:
+      - ./spark_pipelines:/app/spark_pipelines:ro
       - ./data:/app/data
 
     working_dir: /app
@@ -312,18 +320,23 @@ services:
       - /opt/spark/bin/spark-submit
       - --master
       - local[*]
-      - /app/spark_pipelines/movies_pipeline/bronze/main.py
+      - /app/spark_pipelines/batch_pipelines/movies_pipeline/bronze/main.py
 
   silver:
     profiles:
       - etl
       - movies_pipeline
 
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *spark-image
+
+    depends_on:
+      bronze:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
 
     volumes:
+      - ./spark_pipelines:/app/spark_pipelines:ro
       - ./data:/app/data
       - hf_cache:/root/.cache/huggingface
 
@@ -342,7 +355,7 @@ services:
       - /opt/spark/bin/spark-submit
       - --master
       - local[*]
-      - /app/spark_pipelines/movies_pipeline/silver/main.py
+      - /app/spark_pipelines/batch_pipelines/movies_pipeline/silver/main.py
 
 
 
@@ -405,9 +418,9 @@ services:
 
   streaming-producer:
     profiles: [ "streaming" ]
-    build:
-      context: .
-      dockerfile: Dockerfile.producer
+    <<: *producer-image
+    volumes:
+      - ./spark_pipelines:/app/spark_pipelines:ro
     env_file:
       - .env
     environment:
@@ -421,10 +434,9 @@ services:
 
   streaming-ingestion:
     profiles: [ "streaming" ]
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *spark-image
     volumes:
+      - ./spark_pipelines:/app/spark_pipelines:ro
       - ./data:/app/data
     working_dir: /app
     env_file:
@@ -443,10 +455,9 @@ services:
 
   streaming-mongo:
     profiles: [ "streaming" ]
-    build:
-      context: .
-      dockerfile: Dockerfile
+    <<: *spark-image
     volumes:
+      - ./spark_pipelines:/app/spark_pipelines:ro
       - ./data:/app/data
     working_dir: /app
     env_file:
@@ -466,9 +477,9 @@ services:
   streaming-generator:
     profiles: [ "streaming" ]
 
-    build:
-      context: .
-      dockerfile: Dockerfile.producer
+    <<: *producer-image
+    volumes:
+      - ./spark_pipelines:/app/spark_pipelines:ro
 
     env_file:
       - .env
