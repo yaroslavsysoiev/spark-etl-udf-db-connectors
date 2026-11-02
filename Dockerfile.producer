@@ -4,8 +4,9 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir kafka-python minio
 
-COPY spark_pipelines/streaming_pipeline /app/spark_pipelines/streaming_pipeline
+COPY spark_pipelines /app/spark_pipelines
 
 ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "-u", "spark_pipelines/streaming_pipeline/producer/producer.py"]
+CMD ["python", "-u", "/app/spark_pipelines/streaming_pipelines/movie_events_streaming_pipeline/producer/producer.py"]

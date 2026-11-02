@@ -288,6 +288,7 @@ services:
   bronze:
     profiles:
       - etl
+      - movies_pipeline
 
     build:
       context: .
@@ -316,6 +317,7 @@ services:
   silver:
     profiles:
       - etl
+      - movies_pipeline
 
     build:
       context: .
@@ -349,6 +351,7 @@ services:
   # See: https://docs.docker.com/compose/profiles/
 
   zookeeper:
+    profiles: [ "streaming" ]
     image: confluentinc/cp-zookeeper:7.4.4
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
@@ -359,6 +362,7 @@ services:
       - zookeeper_log:/var/lib/zookeeper/log
 
   kafka:
+    profiles: [ "streaming" ]
     image: confluentinc/cp-kafka:7.4.4
     depends_on:
       - zookeeper
@@ -377,6 +381,7 @@ services:
       - kafka_data:/var/lib/kafka/data
 
   minio:
+    profiles: [ "streaming" ]
     image: coollabsio/minio:latest
     container_name: minio
     ports:
@@ -390,6 +395,7 @@ services:
       - minio_data:/data
 
   mongodb:
+    profiles: [ "streaming" ]
     image: mongo:7
     container_name: mongodb
     ports:
@@ -432,7 +438,7 @@ services:
       - /opt/spark/bin/spark-submit
       - --master
       - local[*]
-      - /app/spark_pipelines/streaming_pipeline/ingestion/kafka_to_delta.py
+      - /app/spark_pipelines/streaming_pipelines/movie_events_streaming_pipeline/ingestion/kafka_to_delta.py
     restart: unless-stopped
 
   streaming-mongo:
@@ -454,7 +460,7 @@ services:
       - /opt/spark/bin/spark-submit
       - --master
       - local[*]
-      - /app/spark_pipelines/streaming_pipeline/analytics/delta_to_mongodb.py
+      - /app/spark_pipelines/streaming_pipelines/movie_events_streaming_pipeline/analytics/delta_to_mongodb.py
     restart: unless-stopped
 
   streaming-generator:
@@ -477,7 +483,7 @@ services:
     command:
       - python
       - -u
-      - /app/spark_pipelines/streaming_pipeline/generators/generate_events.py
+      - /app/spark_pipelines/streaming_pipelines/movie_events_streaming_pipeline/generators/generate_events.py
 
     restart: unless-stopped
 
