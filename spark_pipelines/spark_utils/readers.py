@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession, DataFrame
 
-from spark_pipelines.movies_pipeline.config import (
+from spark_pipelines.batch_pipelines.movies_pipeline.config import (
     BRONZE_DELTA_PATH ,
     JDBC_URL,
     CONNECTION_PROPERTIES
