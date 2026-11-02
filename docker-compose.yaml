@@ -452,6 +452,30 @@ services:
       - /app/spark_pipelines/streaming_pipeline/analytics/delta_to_mongodb.py
     restart: unless-stopped
 
+  streaming-generator:
+    profiles: [ "streaming" ]
+
+    build:
+      context: .
+      dockerfile: Dockerfile.producer
+
+    env_file:
+      - .env
+
+    environment:
+      PYTHONPATH: /app
+      MINIO_ENDPOINT: minio:9000
+
+    depends_on:
+      - minio
+
+    command:
+      - python
+      - -u
+      - /app/spark_pipelines/streaming_pipeline/generators/generate_events.py
+
+    restart: unless-stopped
+
 volumes:
   postgres-db-volume:
   postgres_data:
