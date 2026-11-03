@@ -8,7 +8,7 @@ from pyspark.sql.readwriter import DataFrameWriter
 
 from typing import Iterator, Any
 
-from spark_pipelines.movies_pipeline.config import (
+from spark_pipelines.batch_pipelines.movies_pipeline.config import (
     BRONZE_DELTA_PATH,
     SILVER_TABLE_NAME,
     JDBC_URL,

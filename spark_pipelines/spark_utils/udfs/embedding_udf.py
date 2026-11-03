@@ -6,7 +6,7 @@ from typing import Iterator
 from pyspark.sql.functions import pandas_udf
 from pyspark.sql.types import ArrayType, FloatType
 
-from spark_pipelines.movies_pipeline.config import EMBED_MODEL, BATCH_SIZE, DEVICE
+from spark_pipelines.batch_pipelines.movies_pipeline.config import EMBED_MODEL, BATCH_SIZE, DEVICE
 
 
 logger = logging.getLogger(__name__)

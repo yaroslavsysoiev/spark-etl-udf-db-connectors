@@ -4,7 +4,7 @@ from pyspark import StorageLevel
 from pyspark.sql.functions import col, explode, split, trim
 from pyspark.sql.functions import current_timestamp
 
-from spark_pipelines.movies_pipeline.config import AGGREGATED_TABLE_NAME
+from spark_pipelines.batch_pipelines.movies_pipeline.config import AGGREGATED_TABLE_NAME
 from spark_pipelines.spark_utils.spark_session import create_spark_session
 from spark_pipelines.spark_utils.readers import read_delta
 from spark_pipelines.spark_utils.writers import jdbc_writer, write_embeddings_to_postgres

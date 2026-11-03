@@ -8,3 +8,7 @@ sentence-transformers
 torch
 psycopg2-binary
 pgvector
+
+kafka-python
+minio
+pymongo
