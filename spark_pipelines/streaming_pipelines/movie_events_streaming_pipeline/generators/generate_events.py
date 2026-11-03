@@ -1,10 +1,9 @@
 import io
 import json
 import time
-import uuid
 
 from minio import Minio
-from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.models.event import make_event
+from spark_pipelines.streaming_pipelines.common.models.event import make_event
 from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.config import (
     MINIO_ENDPOINT,
     MINIO_ROOT_USER,
@@ -13,36 +12,41 @@ from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.config 
     MINIO_BUCKET
 )
 
-client = Minio(
-    MINIO_ENDPOINT,
-    access_key=MINIO_ROOT_USER,
-    secret_key=MINIO_ROOT_PASSWORD,
-    secure=MINIO_SECURE,
-)
+def main():
 
-counter = 1
-
-while True:
-    event = make_event(
-        counter,
-        str(uuid.uuid4()),
-        f"s{counter}"
+    client = Minio(
+        MINIO_ENDPOINT,
+        access_key=MINIO_ROOT_USER,
+        secret_key=MINIO_ROOT_PASSWORD,
+        secure=MINIO_SECURE,
     )
 
-    payload = json.dumps(event).encode()
+    counter = 1
 
-    object_name = f"inbox/{event['event_id']}.json"
+    while True:
+        event = make_event(
+            user_id=counter,
+            movie_id=f"s{counter}",
+            event_type="view"
+        )
 
-    client.put_object(
-        MINIO_BUCKET,
-        object_name,
-        io.BytesIO(payload),
-        length=len(payload),
-        content_type="application/json",
-    )
+        payload = json.dumps(event).encode("utf-8")
 
-    print(f"Created {object_name}")
+        object_name = f"inbox/{event.event_id}.json"
 
-    counter += 1
+        client.put_object(
+            MINIO_BUCKET,
+            object_name,
+            io.BytesIO(payload),
+            length=len(payload),
+            content_type="application/json",
+        )
 
-    time.sleep(5)
+        print(f"Created {object_name}")
+
+        counter += 1
+
+        time.sleep(5)
+
+if __name__ == '__main__':
+    main()
