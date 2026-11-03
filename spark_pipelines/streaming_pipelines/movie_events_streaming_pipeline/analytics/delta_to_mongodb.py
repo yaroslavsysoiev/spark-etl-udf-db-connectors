@@ -14,7 +14,7 @@ from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.config 
 
 
 def write_unstructured_to_mongo(batch_df, batch_id: int) -> None:
-    rows = batch_df.select("topic", "partition", "offset", "raw_event", "kafka_timestamp" "ingestion_timestamp").toLocalIterator()
+    rows = batch_df.select("topic", "partition", "offset", "raw_event", "kafka_timestamp", "ingestion_timestamp").toLocalIterator()
 
     with MongoClient(MONGO_URI, serverSelectionTimeoutMS=10000) as client:
         database = client[MONGO_DB]
