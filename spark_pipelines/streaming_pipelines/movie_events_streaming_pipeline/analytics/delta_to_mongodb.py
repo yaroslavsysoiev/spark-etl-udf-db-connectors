@@ -14,7 +14,7 @@ from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.config 
 
 
 def write_unstructured_to_mongo(batch_df, batch_id: int) -> None:
-    rows = batch_df.select("raw_event", "event_key", "kafka_timestamp", "ingestion_timestamp").collect()
+    rows = batch_df.select("raw_event", "event_key", "kafka_timestamp", "ingestion_timestamp").toLocalIterator()
     if not rows:
         return
 

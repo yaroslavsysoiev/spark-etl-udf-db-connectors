@@ -29,7 +29,7 @@ def main():
             event_type="view"
         )
 
-        payload = event.to_json().endoce("utf-8")
+        payload = event.to_json().encode("utf-8")
 
         object_name = f"inbox/{event.event_id}.json"
 

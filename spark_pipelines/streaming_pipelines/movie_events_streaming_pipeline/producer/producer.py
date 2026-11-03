@@ -63,11 +63,24 @@ def seed_if_empty(client: Minio) -> None:
 
 def parse_payload(raw: bytes) -> list[dict]:
     data = json.loads(raw.decode("utf-8"))
-    if isinstance(data, list):
-        return data
-    if isinstance(data, dict):
-        return [data]
-    raise ValueError("Event file must be a JSON object or array")
+    events = data if isinstance(data, list) else [data]
+
+    for event in events:
+        if not isinstance(event, dict):
+            raise ValueError("Every event must be a JSON object")
+
+        for field in ("event_id", "movie_id", "event_type", "event_ts"):
+            value = event.get(field)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"Invalid {field}")
+
+        if type(event.get("user_id")) is not int:
+            raise ValueError("user_id must be an integer")
+
+        if event["event_type"] not in {"view", "like", "pause"}:
+            raise ValueError("Unsupported event_type")
+
+    return events
 
 
 def main() -> None:
@@ -79,18 +92,17 @@ def main() -> None:
         bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
         value_serializer=lambda v: json.dumps(v).encode("utf-8"),
         key_serializer=lambda k: k.encode("utf-8") if k else None,
+        acks="all"
     )
 
-    processed: set[str] = set()
     print(f"Watching s3://{MINIO_BUCKET}/inbox -> kafka://{KAFKA_TOPIC}")
 
     while True:
         try:
             for obj in client.list_objects(MINIO_BUCKET, prefix="inbox/", recursive=True):
-                if obj.object_name in processed:
-                    continue
 
                 response = client.get_object(MINIO_BUCKET, obj.object_name)
+
                 try:
                     events = parse_payload(response.read())
                 finally:
@@ -98,23 +110,27 @@ def main() -> None:
                     response.release_conn()
 
                 for event in events:
-                    key = str(event.get("event_id") or obj.object_name)
-                    producer.send(KAFKA_TOPIC, key=key, value=event)
-                    print(f"Published {key} from {obj.object_name}")
+                    key = event["event_id"]
 
-                producer.flush()
-                processed.add(obj.object_name)
+                    metadata = producer.send(
+                        KAFKA_TOPIC,
+                        key=key,
+                        value=event,
+                    ).get(timeout=60)
+
+                    print(
+                        f"Published {key}: "
+                        f"partition={metadata.partition}, offset={metadata.offset}"
+                    )
 
                 archive_name = obj.object_name.replace("inbox/", "processed/", 1)
-                try:
-                    client.copy_object(
-                        MINIO_BUCKET,
-                        archive_name,
-                        CopySource(MINIO_BUCKET, obj.object_name),
-                    )
-                    client.remove_object(MINIO_BUCKET, obj.object_name)
-                except Exception as exc:
-                    print(f"Archive failed for {obj.object_name}: {exc}")
+
+                client.copy_object(
+                    MINIO_BUCKET,
+                    archive_name,
+                    CopySource(MINIO_BUCKET, obj.object_name),
+                )
+                client.remove_object(MINIO_BUCKET, obj.object_name)
 
         except S3Error as exc:
             print(f"MinIO error: {exc}")
