@@ -1,9 +1,19 @@
+import os
+
 from airflow import DAG
 from airflow.providers.docker.operators.docker import DockerOperator
 
 from datetime import datetime
 
-from common import POSTGRES_ENV
+POSTGRES_ENV = {
+    name: os.environ[name]
+    for name in (
+        "POSTGRES_HOST",
+        "POSTGRES_DB",
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+    )
+}
 
 with DAG(
     dag_id='netflix_pipeline_v3.3.6',
