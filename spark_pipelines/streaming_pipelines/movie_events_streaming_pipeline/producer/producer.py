@@ -1,11 +1,11 @@
 import io
 import json
+import logging
 import time
 
 from kafka import KafkaProducer
 from minio import Minio
 from minio.commonconfig import CopySource
-from minio.error import S3Error
 
 from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.config import (
     KAFKA_BOOTSTRAP_SERVERS,
@@ -19,6 +19,7 @@ from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.config 
 )
 from spark_pipelines.streaming_pipelines.common.models.event import make_event
 
+logger = logging.getLogger(__name__)
 
 SEED_EVENTS = [
     make_event(101, "s101", "view"),
@@ -99,29 +100,45 @@ def main() -> None:
 
     while True:
         try:
-            for obj in client.list_objects(MINIO_BUCKET, prefix="inbox/", recursive=True):
+            for obj in client.list_objects(
+                    MINIO_BUCKET,
+                    prefix="inbox/",
+                    recursive=True
+            ):
 
                 response = client.get_object(MINIO_BUCKET, obj.object_name)
 
                 try:
-                    events = parse_payload(response.read())
+                    raw = response.read()
                 finally:
                     response.close()
                     response.release_conn()
 
-                for event in events:
-                    key = event["event_id"]
+                try:
+                    events = parse_payload(raw)
+                except(ValueError, UnicodeDecodeError) as exc:
+                    rejected_name = obj.object_name.replace(
+                        "inbox/", "rejected/", 1
+                    )
 
-                    metadata = producer.send(
+                    # copy the rejected file before removing it
+                    client.copy_object(
+                        MINIO_BUCKET,
+                        rejected_name,
+                        CopySource(MINIO_BUCKET, obj.object_name),
+                    )
+                    client.remove_object(MINIO_BUCKET, obj.object_name)
+
+                    print(f"Rejected {obj.object_name}: {exc}")
+                    continue
+
+
+                for event in events:
+                    producer.send(
                         KAFKA_TOPIC,
-                        key=key,
+                        key=event["event_id"],
                         value=event,
                     ).get(timeout=60)
-
-                    print(
-                        f"Published {key}: "
-                        f"partition={metadata.partition}, offset={metadata.offset}"
-                    )
 
                 archive_name = obj.object_name.replace("inbox/", "processed/", 1)
 
@@ -132,10 +149,8 @@ def main() -> None:
                 )
                 client.remove_object(MINIO_BUCKET, obj.object_name)
 
-        except S3Error as exc:
-            print(f"MinIO error: {exc}")
-        except Exception as exc:
-            print(f"Producer error: {exc}")
+        except Exception:
+            logger.exception("Producer poll failed")
 
         time.sleep(PRODUCER_POLL_SECONDS)
 
