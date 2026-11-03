@@ -4,12 +4,13 @@ import time
 import uuid
 
 from minio import Minio
-
+from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.models.event import make_event
 from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.config import (
     MINIO_ENDPOINT,
     MINIO_ROOT_USER,
     MINIO_ROOT_PASSWORD,
     MINIO_SECURE,
+    MINIO_BUCKET
 )
 
 client = Minio(
@@ -19,24 +20,21 @@ client = Minio(
     secure=MINIO_SECURE,
 )
 
-BUCKET = "events"
-
 counter = 1
 
 while True:
-    event = {
-        "event_id": str(uuid.uuid4()),
-        "user_id": counter,
-        "movie_id": f"s{counter}",
-        "event_type": "view",
-    }
+    event = make_event(
+        counter,
+        str(uuid.uuid4()),
+        f"s{counter}"
+    )
 
     payload = json.dumps(event).encode()
 
     object_name = f"inbox/{event['event_id']}.json"
 
     client.put_object(
-        BUCKET,
+        MINIO_BUCKET,
         object_name,
         io.BytesIO(payload),
         length=len(payload),
