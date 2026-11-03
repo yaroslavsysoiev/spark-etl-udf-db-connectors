@@ -17,7 +17,7 @@ from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.config 
     MINIO_SECURE,
     PRODUCER_POLL_SECONDS,
 )
-from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.models.event import make_event
+from spark_pipelines.streaming_pipelines.common.models.event import make_event
 
 
 SEED_EVENTS = [
