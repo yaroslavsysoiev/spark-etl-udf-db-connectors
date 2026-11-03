@@ -3,6 +3,7 @@ import time
 
 from minio import Minio
 from spark_pipelines.streaming_pipelines.common.models.event import make_event
+from spark_pipelines.streaming_pipelines.common.minio_utils import ensure_bucket_ready
 from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.config import (
     MINIO_ENDPOINT,
     MINIO_ROOT_USER,
@@ -19,6 +20,8 @@ def main():
         secret_key=MINIO_ROOT_PASSWORD,
         secure=MINIO_SECURE,
     )
+
+    ensure_bucket_ready(client, MINIO_BUCKET)
 
     counter = 1
 

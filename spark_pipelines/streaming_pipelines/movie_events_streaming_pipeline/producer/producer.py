@@ -17,6 +17,7 @@ from spark_pipelines.streaming_pipelines.movie_events_streaming_pipeline.config 
     MINIO_SECURE,
     PRODUCER_POLL_SECONDS,
 )
+from spark_pipelines.streaming_pipelines.common.minio_utils import ensure_bucket_ready
 from spark_pipelines.streaming_pipelines.common.models.event import make_event
 
 logger = logging.getLogger(__name__)
@@ -35,12 +36,6 @@ def minio_client() -> Minio:
         secret_key=MINIO_ROOT_PASSWORD,
         secure=MINIO_SECURE,
     )
-
-
-def ensure_bucket(client: Minio) -> None:
-    if not client.bucket_exists(MINIO_BUCKET):
-        client.make_bucket(MINIO_BUCKET)
-        print(f"Created bucket {MINIO_BUCKET}")
 
 
 def seed_if_empty(client: Minio) -> None:
@@ -86,7 +81,7 @@ def parse_payload(raw: bytes) -> list[dict]:
 
 def main() -> None:
     client = minio_client()
-    ensure_bucket(client)
+    ensure_bucket_ready(client, MINIO_BUCKET)
     seed_if_empty(client)
 
     producer = KafkaProducer(
