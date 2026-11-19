@@ -18,6 +18,7 @@ def main() -> None:
         .option("subscribe", KAFKA_TOPIC)
         .option("startingOffsets", "earliest")
         .option("failOnDataLoss", "false")
+        .option("maxOffsetsPerTrigger", 1000)
         .load()
     )
 

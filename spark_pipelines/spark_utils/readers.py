@@ -27,9 +27,12 @@ def read_delta(spark: SparkSession) -> DataFrame:
     )
 
 
-def read_from_postgres(spark: SparkSession) -> DataFrame:
+def read_from_postgres(
+    spark: SparkSession,
+    table_name: str,
+) -> DataFrame:
     return spark.read.jdbc(
         url=JDBC_URL,
-        table=table_name ,
-        properties=CONNECTION_PROPERTIES
+        table=table_name,
+        properties=CONNECTION_PROPERTIES,
     )
