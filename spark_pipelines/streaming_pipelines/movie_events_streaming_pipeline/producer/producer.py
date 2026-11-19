@@ -2,6 +2,7 @@ import io
 import json
 import logging
 import time
+import threading
 
 from kafka import KafkaProducer
 from minio import Minio
@@ -91,63 +92,100 @@ def main() -> None:
         acks="all"
     )
 
+    stop_event = threading.Event()
+
     print(f"Watching s3://{MINIO_BUCKET}/inbox -> kafka://{KAFKA_TOPIC}")
+    print("Press Ctrl + C to stop the producer")
 
-    while True:
-        try:
-            for obj in client.list_objects(
-                    MINIO_BUCKET,
-                    prefix="inbox/",
-                    recursive=True
-            ):
+    try:
+        while not stop_event.is_set():
+            try:
+                for obj in client.list_objects(
+                        MINIO_BUCKET,
+                        prefix="inbox/",
+                        recursive=True
+                ):
 
-                response = client.get_object(MINIO_BUCKET, obj.object_name)
+                    if stop_event.is_set():
+                        break
 
-                try:
-                    raw = response.read()
-                finally:
-                    response.close()
-                    response.release_conn()
-
-                try:
-                    events = parse_payload(raw)
-                except(ValueError, UnicodeDecodeError) as exc:
-                    rejected_name = obj.object_name.replace(
-                        "inbox/", "rejected/", 1
+                    response = client.get_object(
+                        MINIO_BUCKET,
+                        obj.object_name
                     )
 
-                    # copy the rejected file before removing it
+                    try:
+                        raw = response.read()
+                    finally:
+                        response.close()
+                        response.release_conn()
+
+                    try:
+                        events = parse_payload(raw)
+
+                    except(ValueError, UnicodeDecodeError) as exc:
+                        rejected_name = obj.object_name.replace(
+                            "inbox/", "rejected/", 1
+                        )
+
+                        # copy the rejected file before removing it
+                        client.copy_object(
+                            MINIO_BUCKET,
+                            rejected_name,
+                            CopySource(MINIO_BUCKET, obj.object_name),
+                        )
+                        client.remove_object(
+                            MINIO_BUCKET,
+                            obj.object_name
+                        )
+
+                        logger.warning(
+                            "Rejected %s: %s",
+                            obj.object_name,
+                            exc
+                        ),
+                        continue
+
+                    for event in events:
+                        if stop_event.is_set():
+                            break
+
+                        producer.send(
+                            KAFKA_TOPIC,
+                            key=event["event_id"],
+                            value=event,
+                        ).get(timeout=60)
+
+                    if stop_event.is_set():
+                        break
+
+                    archive_name = obj.object_name.replace("inbox/", "processed/", 1)
+
                     client.copy_object(
                         MINIO_BUCKET,
-                        rejected_name,
+                        archive_name,
                         CopySource(MINIO_BUCKET, obj.object_name),
                     )
                     client.remove_object(MINIO_BUCKET, obj.object_name)
 
-                    print(f"Rejected {obj.object_name}: {exc}")
-                    continue
+            except Exception:
+                logger.exception("Producer poll failed")
 
+            # Wait between polling cycles; can be interrupted immediately
+            stop_event.wait(PRODUCER_POLL_SECONDS)
 
-                for event in events:
-                    producer.send(
-                        KAFKA_TOPIC,
-                        key=event["event_id"],
-                        value=event,
-                    ).get(timeout=60)
+    except KeyboardInterrupt:
+        logger.info("Shutdown requested by user")
 
-                archive_name = obj.object_name.replace("inbox/", "processed/", 1)
+    finally:
+        logger.info("Flushing Kafka producer ... ")
 
-                client.copy_object(
-                    MINIO_BUCKET,
-                    archive_name,
-                    CopySource(MINIO_BUCKET, obj.object_name),
-                )
-                client.remove_object(MINIO_BUCKET, obj.object_name)
+        try:
+            producer.flush(timeout=30)
+        finally:
+            producer.close(timeout=30)
 
-        except Exception:
-            logger.exception("Producer poll failed")
-
-        time.sleep(PRODUCER_POLL_SECONDS)
+        logger.info("Producer stopped successfully")
 
 
 if __name__ == "__main__":
