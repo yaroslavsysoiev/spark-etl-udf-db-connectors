@@ -58,3 +58,6 @@ htmlcov/
 
 # VS Code (if you ever use it)
 .vscode/
+
+# Airflow
+airflow.cfg

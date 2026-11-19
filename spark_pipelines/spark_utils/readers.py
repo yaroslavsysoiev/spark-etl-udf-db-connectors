@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession, DataFrame
 
-from spark_pipelines.movies_pipeline.config import (
+from spark_pipelines.batch_pipelines.movies_pipeline.config import (
     BRONZE_DELTA_PATH ,
     JDBC_URL,
     CONNECTION_PROPERTIES
@@ -27,9 +27,12 @@ def read_delta(spark: SparkSession) -> DataFrame:
     )
 
 
-def read_from_postgres(spark: SparkSession) -> DataFrame:
+def read_from_postgres(
+    spark: SparkSession,
+    table_name: str,
+) -> DataFrame:
     return spark.read.jdbc(
         url=JDBC_URL,
-        table=table_name ,
-        properties=CONNECTION_PROPERTIES
+        table=table_name,
+        properties=CONNECTION_PROPERTIES,
     )
