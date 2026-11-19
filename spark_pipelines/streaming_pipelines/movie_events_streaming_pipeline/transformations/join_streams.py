@@ -13,7 +13,7 @@ from pyspark.sql.types import (
     StringType,
     IntegerType,
 )
-from pyspark.sql.functions import from_json, col
+from pyspark.sql.functions import col
 
 schema = StructType([
     StructField("event_id", StringType()),
